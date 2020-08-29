@@ -1,0 +1,36 @@
+scrolls:
+    #Scroll cooldown time
+    time: 180
+    #Scroll teleport delay (set to 0 to have no tp)
+    tpdelay: 5
+    #Teleport Delay message
+    tpdelaymsg: "&aYou have begun to teleport... Do not move for %seconds% seconds"
+    #Scroll name (Reusable Scrolls)
+    scrollName: "&aReusable Teleportation Scroll"
+    #Scroll name (Non-Reusable)
+    cheapScrollName: "&aCheap Teleportation Scroll"
+    #Max Entities Around
+    #This prevents scrolls from being dropped if there are more than
+    #- 'maxEntities' entities in a radius (maxEntitiesRadius) of the killed entity
+    maxEntities: 15
+    #The radius in which the plugin checks for mobs centered on the location of the killed entity
+    maxEntitiesRadius: 16
+    
+    #Allow Scroll drops from spawners
+    allowSpawners: false
+    
+    #Drop chances
+    
+    #Mob Drops defines what mobs can drop Scrolls
+    #You can add to the list as you see fit
+    mobDrops:
+        - 'SKELETON'
+        - 'ZOMBIE'
+        - 'SPIDER'
+    #Allow the chance for both scrolls to be dropped from one entity death
+    doubleDrops: false
+    #Drop chances for each scroll (1 being 100%, 0 being 0%)
+    cheapScrollDrop: 0.05
+    scrollDrop: 0.02
+    
+    

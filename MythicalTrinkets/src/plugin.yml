@@ -4,3 +4,12 @@ author: DuppyIsCool
 version: 1.0
 api-version: 1.16
 description: MythicalTrinkets
+commands:
+    givescroll:
+        description: Gives the user a reuseable scroll
+        usage: /<command>
+        permission: scrolls.givescroll
+    givecheapscroll:
+        description: Gives the user a cheap scroll
+        usage: /<command>
+        permission: scrolls.givecheapscroll
