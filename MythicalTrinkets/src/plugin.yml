@@ -13,3 +13,6 @@ commands:
         description: Gives the user a cheap scroll
         usage: /<command>
         permission: scrolls.givecheapscroll
+    giveorb:
+        description: Gives the user an orb
+        usage: /<command>

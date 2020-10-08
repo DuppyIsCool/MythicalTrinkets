@@ -11,12 +11,14 @@ import me.DuppyIsCool.DiamondShards.ShardRecipe;
 import me.DuppyIsCool.Scrolls.ConfigManager;
 import me.DuppyIsCool.Scrolls.ScrollManager;
 import me.DuppyIsCool.Scrolls.ScrollRecipe;
+import me.DuppyIsCool.Vaal.Orbs;
 import net.md_5.bungee.api.ChatColor;
 
 public class Main extends JavaPlugin implements CommandExecutor{
 	
 	ConfigManager cfgm = new ConfigManager();
 	ScrollManager sm = new ScrollManager();
+	Orbs orb = new Orbs();
 	public void onEnable() {
 		//Starting Message
 		Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "Attempting to load MythicalTrinkets");
@@ -24,13 +26,16 @@ public class Main extends JavaPlugin implements CommandExecutor{
 		Plugin.plugin = this;
 		this.getCommand("givescroll").setExecutor(this);
 		this.getCommand("givecheapscroll").setExecutor(this);
+		this.getCommand("giveorb").setExecutor(this);
 		//Setup Config
 		cfgm.setup();
 		sm.setupDefaultConfig();
 		sm.setupConfig();
+		orb.setup();
 		
 		//Set event listener
 		Bukkit.getServer().getPluginManager().registerEvents(new Events(), this);
+		Bukkit.getServer().getPluginManager().registerEvents(new Orbs(), this);
 		Bukkit.getServer().getPluginManager().registerEvents(new ScrollManager(), this);
 		
 		//Set recipes
@@ -74,6 +79,25 @@ public class Main extends JavaPlugin implements CommandExecutor{
 				if(p.hasPermission("scrolls.givecheapscroll") || p.isOp()) {
 					p.getInventory().addItem(sm.createScroll("CHEAP"));
 					p.sendMessage(ChatColor.GREEN + "A cheap scroll has been added to your inventory.");
+					return true;
+				}
+				else {
+					p.sendMessage(ChatColor.RED + "You do not have permission to use this command");
+					return true;
+				}
+			}
+			else {
+				sender.sendMessage(ChatColor.RED + "You must be a player to use this command");
+				return true;
+			}
+		}
+		
+		else if(command.getName().equalsIgnoreCase("giveorb")) {
+			if(sender instanceof Player) {
+				Player p = (Player) sender;
+				if(p.hasPermission("orbs.giveorb") || p.isOp()) {
+					p.getInventory().addItem(orb.createOrb());
+					p.sendMessage(ChatColor.GREEN + "A Vaal Orb has been added to your inventory.");
 					return true;
 				}
 				else {
