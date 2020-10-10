@@ -2,6 +2,7 @@ package me.DuppyIsCool.Vaal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -31,24 +32,34 @@ import me.DuppyIsCool.Main.Plugin;
 import me.DuppyIsCool.Scrolls.ScrollManager;
 
 public class Orbs implements Listener{
-	public static ArrayList<Enchantment> blockedEnchants = new ArrayList<Enchantment>();
+	public static ArrayList<Enchantment> blockedEnchants;
 	public static ArrayList<String> Armormaterial = new ArrayList<>(Arrays.asList("LEATHER", "GOLDEN", "CHAINMAIL", "IRON", "DIAMOND", "NETHERITE"));
 	public static ArrayList<String> Weaponmaterial = new ArrayList<>(Arrays.asList("WOODEN", "STONE", "GOLDEN", "IRON", "DIAMOND", "NETHERITE"));
-	public static ArrayList<String> loreList = new ArrayList<String>();
+	public static ArrayList<String> loreList;
+	public static ArrayList<Player> open;
 	public static String orbDisplayName, displayName,failMessage,modifiedmessage;
 	public static double enchantmentUpgradeChance,upgradeChance,downgradeChance,failChance,dropChance;
 	public static boolean allowLoreItems,spawnerDrops;
+	public static HashMap<Integer,Double> etable;
 	
 	public void setup() {
 		Plugin.plugin.saveDefaultConfig();
+		blockedEnchants = new ArrayList<Enchantment>();
 		loreList = new ArrayList<String>();
+		etable = new HashMap<Integer,Double>();
+		open = new ArrayList<Player>();
+		
 		//Setup blocked enchantments
 		ArrayList<String> temp = (ArrayList<String>) Plugin.plugin.getConfig().getStringList("orbs.blockedenchants");
-			for(String e : temp) {
-				if(getEnchantment(e) != null) {
-					blockedEnchants.add(getEnchantment(e));
-				}
+		for(String e : temp) {
+			if(getEnchantment(e) != null) {
+				blockedEnchants.add(getEnchantment(e));
 			}
+		}
+		//Setup Etable Level Map
+		for(String num : Plugin.plugin.getConfig().getConfigurationSection("orbs.etable").getKeys(false)) {
+			etable.put(Integer.parseInt(num), Plugin.plugin.getConfig().getDouble("orbs.etable."+num));
+		}
 		//Setup orb lore
 		for(String s : Plugin.plugin.getConfig().getStringList("orbs.orbLore")) {
 			loreList.add(ChatColor.translateAlternateColorCodes('&', s));
@@ -116,6 +127,7 @@ public class Orbs implements Listener{
 				            			}
 			            		}
 			            	}
+			            	open.add(player);
 			            	player.openInventory(i);
 			            	
 			            	if(player.getInventory().getItemInMainHand().getAmount() == 1)
@@ -140,7 +152,8 @@ public class Orbs implements Listener{
 			if(e.getView().getTitle().equals(ChatColor.DARK_PURPLE + "Click the item you wish to modify")) {
 				if(e.getCurrentItem() != null && e.getInventory() != null && e.getClickedInventory() != null) {
 					if(e.getInventory().getItem(e.getRawSlot()) != null) {
-						//Change lore an item
+						
+						//Removing the item from the player's inventory/armor
 						ItemStack item = e.getInventory().getItem(e.getRawSlot());
 						boolean done = false, changed = false;
 						for(ItemStack i : e.getWhoClicked().getInventory().getArmorContents()) {
@@ -161,7 +174,8 @@ public class Orbs implements Listener{
 										break;
 									}
 							}
-					
+						
+						//Change the item's meta
 						ItemMeta itemmeta = item.getItemMeta();
 						if(itemmeta.hasDisplayName())
 							itemmeta.setDisplayName(capitalizeWord(ChatColor.translateAlternateColorCodes('&', displayName.replaceAll("%currentname%", itemmeta.getDisplayName()))));
@@ -181,12 +195,12 @@ public class Orbs implements Listener{
 						if(item.getEnchantments().size() > 0) {
 							for(Enchantment a : item.getEnchantments().keySet()) {
 								if(!blockedEnchants.contains(a)) {
-									System.out.println("blocked enchants does not contain: "+a);
 									validEnchants.add(a);
 								}
 							}
 						}
 						
+						//Enchantment if it is probable
 						double rand = Math.random();
 						if(!changed)
 							if((validEnchants.size() > 0 && rand <= enchantmentUpgradeChance) || !isIupgrade(item)) {
@@ -194,24 +208,43 @@ public class Orbs implements Listener{
 								for(int i = 0; i < validEnchants.size(); i++) {
 									if(i == num) {
 										int level = item.getEnchantmentLevel(validEnchants.get(i));
+										
+										Integer levelmodifier = null;
+										Integer tempn = null;
+										for(Integer n : etable.keySet()) {
+											tempn = n;
+											double temprand = Math.random();
+											if(temprand <= etable.get(n)) {
+												levelmodifier = n;
+												break;
+											}
+										}	
+										
+										if(levelmodifier == null && tempn != null) {
+											levelmodifier = tempn;
+										}
+										else if(levelmodifier == null)
+											levelmodifier = 1;
+										
 										item.removeEnchantment(validEnchants.get(i));
-										item.addUnsafeEnchantment(validEnchants.get(i), level+2);
+										item.addUnsafeEnchantment(validEnchants.get(i), level+levelmodifier);
 										changed = true;
 									}
 								}
 							}
+						double tempprob = 0;
+						if(validEnchants.size() == 0) {
+							tempprob = enchantmentUpgradeChance/3;
+						}
 						
 						rand = Math.random();
 						if(!changed)
-							if(rand <= failChance) {
-								e.getWhoClicked().getInventory().addItem(item);
-								e.getWhoClicked().closeInventory();
+							if(rand <= (failChance + tempprob)) {
 								changed = true;
 							}
 						//Item Upgrades
 						if(!changed)
 							if(isIupgrade(item)) {
-							
 								String type = item.getType().toString().substring(0, item.getType().toString().indexOf('_'));
 								boolean up = true,down = true;
 								
@@ -227,7 +260,8 @@ public class Orbs implements Listener{
 								
 								double random = Math.random();
 								if(up) {
-									if(random <= upgradeChance) {
+
+									if(random <= (upgradeChance + tempprob)) {
 										
 										if(isArmor(item)) {
 											type = Armormaterial.get(Armormaterial.indexOf(type)+1);
@@ -284,6 +318,7 @@ public class Orbs implements Listener{
 							}
 						//End of item editing
 						e.getWhoClicked().getInventory().addItem(item);
+						open.remove(e.getWhoClicked());
 						e.getWhoClicked().closeInventory();
 						
 					}
@@ -292,7 +327,7 @@ public class Orbs implements Listener{
 		}catch(ArrayIndexOutOfBoundsException error) {e.setCancelled(true);}
 	}
 	
-	//Prevent players from picking up items, as their inventory will be reset to the modified one
+	//Prevent players from picking up items if they are in the inventory
 	@EventHandler
 	public void onPickup(EntityPickupItemEvent event){
 		if(event.getEntity() instanceof Player){
@@ -356,8 +391,10 @@ public class Orbs implements Listener{
 	
 	@EventHandler
 	public void playerCloseInventory(InventoryCloseEvent e) {
-		if(e.getView().getTitle().equalsIgnoreCase(ChatColor.DARK_PURPLE + "Click the item you wish to modify"))
+		if(open.contains(e.getPlayer())) {
 			e.getPlayer().getInventory().addItem(createOrb());
+			open.remove(e.getPlayer());
+		}
 	}
 	
 	public void onPlayerClickOnItem(InventoryClickEvent e){
@@ -544,6 +581,22 @@ public class Orbs implements Listener{
 	        	return Enchantment.VANISHING_CURSE;
 	        case "mending":
 	        	return Enchantment.MENDING;
+	        case "depth_stider":
+	        	return Enchantment.DEPTH_STRIDER;
+	        case "frost_walker":
+	        	return Enchantment.FROST_WALKER;
+	        case "lure":
+	        	return Enchantment.LURE;
+	        case "luck_of_the_sea":
+	        	return Enchantment.LUCK;
+	        case "multishot":
+	        	return Enchantment.MULTISHOT;
+	        case "quick_charge":
+	        	return Enchantment.QUICK_CHARGE;
+	        case "riptide":
+	        	return Enchantment.RIPTIDE;
+	        case "sweeping_edge":
+	        	return Enchantment.SWEEPING_EDGE;
 	        default:
 	        	Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "Failed to get enchantment: "+name);
 	            return null;

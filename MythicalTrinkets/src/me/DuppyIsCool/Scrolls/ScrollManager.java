@@ -10,6 +10,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.entity.Creature;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -432,7 +433,9 @@ public class ScrollManager implements Listener{
 	            int x = (int) l.getX(), y = (int) l.getY(), z = (int) l.getZ();
 	            for (Entity e: new Location(l.getWorld(), x + (chX * 16), y, z + (chZ * 16)).getChunk().getEntities()) {
 	                if (e.getLocation().distance(l) <= radius && e.getLocation().getBlock() != l.getBlock())
-	                    radiusEntities.add(e);
+	                	if(e instanceof Creature)
+	                		if(e.getType() != EntityType.PLAYER)
+	                			radiusEntities.add(e);
 	            }
 	        }
 	    }
