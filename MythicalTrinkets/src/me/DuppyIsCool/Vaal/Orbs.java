@@ -28,6 +28,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 
+import me.DuppyIsCool.Main.Achievements;
 import me.DuppyIsCool.Main.Plugin;
 import me.DuppyIsCool.Scrolls.ScrollManager;
 
@@ -35,20 +36,20 @@ public class Orbs implements Listener{
 	public static ArrayList<Enchantment> blockedEnchants;
 	public static ArrayList<String> Armormaterial = new ArrayList<>(Arrays.asList("LEATHER", "GOLDEN", "CHAINMAIL", "IRON", "DIAMOND", "NETHERITE"));
 	public static ArrayList<String> Weaponmaterial = new ArrayList<>(Arrays.asList("WOODEN", "STONE", "GOLDEN", "IRON", "DIAMOND", "NETHERITE"));
-	public static ArrayList<String> loreList;
-	public static ArrayList<Player> open;
-	public static String orbDisplayName, displayName,failMessage,modifiedmessage;
+	public static ArrayList<String> loreList,corruptionlore;
+	public static String orbDisplayName, displayName,modifiedmessage;
 	public static double enchantmentUpgradeChance,upgradeChance,downgradeChance,failChance,dropChance;
-	public static boolean allowLoreItems,spawnerDrops;
+	public static boolean allowLoreItems,spawnerDrops,usePermissions;
 	public static HashMap<Integer,Double> etable;
+	public static ArrayList<Player> open;
 	
 	public void setup() {
 		Plugin.plugin.saveDefaultConfig();
 		blockedEnchants = new ArrayList<Enchantment>();
 		loreList = new ArrayList<String>();
+		corruptionlore = new ArrayList<String>();
 		etable = new HashMap<Integer,Double>();
 		open = new ArrayList<Player>();
-		
 		//Setup blocked enchantments
 		ArrayList<String> temp = (ArrayList<String>) Plugin.plugin.getConfig().getStringList("orbs.blockedenchants");
 		for(String e : temp) {
@@ -56,6 +57,12 @@ public class Orbs implements Listener{
 				blockedEnchants.add(getEnchantment(e));
 			}
 		}
+		
+		//Setup corruption lore
+		for(String s : Plugin.plugin.getConfig().getStringList("orbs.modifiedmessage")) {
+			corruptionlore.add(s);
+		}
+		
 		//Setup Etable Level Map
 		for(String num : Plugin.plugin.getConfig().getConfigurationSection("orbs.etable").getKeys(false)) {
 			etable.put(Integer.parseInt(num), Plugin.plugin.getConfig().getDouble("orbs.etable."+num));
@@ -71,13 +78,12 @@ public class Orbs implements Listener{
 		downgradeChance = Plugin.plugin.getConfig().getDouble("orbs.downgradeChance");
 		failChance = Plugin.plugin.getConfig().getDouble("orbs.failChance");
 		dropChance = Plugin.plugin.getConfig().getDouble("orbs.dropChance");
-		failMessage = Plugin.plugin.getConfig().getString("orbs.failMessage");
 		displayName = Plugin.plugin.getConfig().getString("orbs.displayName");
 		allowLoreItems = Plugin.plugin.getConfig().getBoolean("orbs.allowLoreItems");
 		spawnerDrops = Plugin.plugin.getConfig().getBoolean("orbs.spawnerDrops");
 		orbDisplayName = Plugin.plugin.getConfig().getString("orbs.orbDisplayName");
-		modifiedmessage = Plugin.plugin.getConfig().getString("orbs.modifiedmessage");
-		
+		modifiedmessage = corruptionlore.get(0);
+		usePermissions = Plugin.plugin.getConfig().getBoolean("orbs.usePermission");
 		if((upgradeChance + downgradeChance + enchantmentUpgradeChance + failChance) != 1) {
 			Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "Error: Total probability in the chance table does not add up to 1!");
 		}
@@ -117,10 +123,12 @@ public class Orbs implements Listener{
 			            	for(ItemStack items : player.getInventory().getContents()) {
 			            		if(items != null) {
 				            		if(isIupgrade(items) || items.getEnchantments().size() > 0)
-				            			if(items.getItemMeta().getLore() != null) {
-				            				if(!items.getItemMeta().getLore().contains(ChatColor.translateAlternateColorCodes('&', modifiedmessage)))
-				            					if(items.getItemMeta().getLore().size() > 0 || allowLoreItems)
-				            						i.addItem(items);
+				            			if(items.hasItemMeta()) {
+				            				if(items.getItemMeta().hasLore())
+					            				if(!items.getItemMeta().getLore().contains(ChatColor.translateAlternateColorCodes('&', modifiedmessage))) {
+					            					if(items.getItemMeta().getLore().size() > 0 || allowLoreItems)
+					            						i.addItem(items);
+					            				}
 				            			}	
 				            			else {
 				            				i.addItem(items);
@@ -152,7 +160,6 @@ public class Orbs implements Listener{
 			if(e.getView().getTitle().equals(ChatColor.DARK_PURPLE + "Click the item you wish to modify")) {
 				if(e.getCurrentItem() != null && e.getInventory() != null && e.getClickedInventory() != null) {
 					if(e.getInventory().getItem(e.getRawSlot()) != null) {
-						
 						//Removing the item from the player's inventory/armor
 						ItemStack item = e.getInventory().getItem(e.getRawSlot());
 						boolean done = false, changed = false;
@@ -186,7 +193,9 @@ public class Orbs implements Listener{
 							for(String s : itemmeta.getLore()) {
 								templore.add(s);
 							}
-						templore.add(ChatColor.translateAlternateColorCodes('&', modifiedmessage));
+						for(String s : corruptionlore)
+							templore.add(ChatColor.translateAlternateColorCodes('&', s));
+						
 						itemmeta.setLore(templore);
 						item.setItemMeta(itemmeta);
 						ArrayList<Enchantment> validEnchants = new ArrayList<Enchantment>();
@@ -257,10 +266,10 @@ public class Orbs implements Listener{
 								
 								if(type.equalsIgnoreCase("NETHERITE"))
 									up = false;
-								
+								//If it is possible upgrade
 								double random = Math.random();
 								if(up) {
-
+									//If chance allows
 									if(random <= (upgradeChance + tempprob)) {
 										
 										if(isArmor(item)) {
@@ -273,8 +282,10 @@ public class Orbs implements Listener{
 											
 											item.setType(Material.getMaterial(type + item.getType().toString().substring(item.getType().toString().indexOf('_'))));
 										}
+										Achievements.completeAchievement("Spicy Rewards",(Player) e.getWhoClicked());
 										
 									}
+									//If chance doesn't allow to go up and it cannot go down, go up anyways.
 									else if(!down) {
 										if(isArmor(item)) {
 											type = Armormaterial.get(Armormaterial.indexOf(type)+1);
@@ -286,8 +297,9 @@ public class Orbs implements Listener{
 											
 											item.setType(Material.getMaterial(type + item.getType().toString().substring(item.getType().toString().indexOf('_'))));
 										}
+										Achievements.completeAchievement("Spicy Rewards",(Player) e.getWhoClicked());
 									}
-									
+									//If it can go down or up, go down.
 									else {
 										if(isArmor(item)) {
 											type = Armormaterial.get(Armormaterial.indexOf(type)-1);
@@ -299,9 +311,11 @@ public class Orbs implements Listener{
 											
 											item.setType(Material.getMaterial(type + item.getType().toString().substring(item.getType().toString().indexOf('_'))));
 										}
+										Achievements.completeAchievement("'f' in chat",(Player) e.getWhoClicked());
 									}
 									
 								}
+								//Go down as a final catch
 								else{
 									if(isArmor(item)) {
 										type = Armormaterial.get(Armormaterial.indexOf(type)-1);
@@ -313,12 +327,14 @@ public class Orbs implements Listener{
 										
 										item.setType(Material.getMaterial(type + item.getType().toString().substring(item.getType().toString().indexOf('_'))));
 									}
+									Achievements.completeAchievement("'f' in chat",(Player) e.getWhoClicked());
 								}
 								changed = true;
 							}
 						//End of item editing
+						//Add item and close their inventory
 						e.getWhoClicked().getInventory().addItem(item);
-						open.remove(e.getWhoClicked());
+						open.remove((Player) e.getWhoClicked());
 						e.getWhoClicked().closeInventory();
 						
 					}
@@ -338,6 +354,16 @@ public class Orbs implements Listener{
 	}
 	
 	@EventHandler
+	public void playerCloseInventory(InventoryCloseEvent e) {
+		if(e.getView().getTitle().equalsIgnoreCase(ChatColor.DARK_PURPLE + "Click the item you wish to modify"))
+		if(open.contains(e.getPlayer())) {
+			e.getPlayer().getInventory().addItem(createOrb());
+			open.remove(e.getPlayer());
+		}
+	}
+	
+	@EventHandler
+	//Tag spawned mobs that spawn from a spawner
 	public void onMobSpawn(CreatureSpawnEvent e) {
 		if(!spawnerDrops) {
 			if(e.getSpawnReason().equals(SpawnReason.SPAWNER)) {
@@ -349,6 +375,7 @@ public class Orbs implements Listener{
 	}
 	
 	@EventHandler
+	//Prevent tagged mobs from dropping orbs
 	public void onMobDeath(EntityDeathEvent e) {
 		if(e.getEntity().getKiller() instanceof Player) {
 			if(ScrollManager.getNearbyEntities(e.getEntity().getLocation(),ScrollManager.maxEntitiesRadius).length <= ScrollManager.maxEntities) {
@@ -358,7 +385,8 @@ public class Orbs implements Listener{
 					}
 					else {
 						if(Math.random() <= dropChance) {
-							e.getEntity().getWorld().dropItemNaturally(e.getEntity().getLocation(), createOrb());
+							if(e.getEntity().getKiller().hasPermission("orbs.drops") || !(usePermissions))
+								e.getEntity().getWorld().dropItemNaturally(e.getEntity().getLocation(), createOrb());
 						}
 					}
 				}
@@ -366,6 +394,7 @@ public class Orbs implements Listener{
 		}
 	}
 	
+	//Prevent Anvil modification of corrupted items
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onInventoryClick(PrepareAnvilEvent e){
 		if(e.getInventory().getItem(0) != null) {
@@ -389,20 +418,7 @@ public class Orbs implements Listener{
 		}
 	}
 	
-	@EventHandler
-	public void playerCloseInventory(InventoryCloseEvent e) {
-		if(open.contains(e.getPlayer())) {
-			e.getPlayer().getInventory().addItem(createOrb());
-			open.remove(e.getPlayer());
-		}
-	}
-	
-	public void onPlayerClickOnItem(InventoryClickEvent e){
-        if(e.getRawSlot() == e.getSlot() && e.getView().getTitle().equals(ChatColor.DARK_PURPLE + "Click the item you wish to modify")){
-        	e.setCancelled(true);
-    	} 
-	}
-	
+	//Check if the item is an item that can be upgraded
 	private boolean isIupgrade(ItemStack itemStack) {
         if (itemStack == null)
             return false;

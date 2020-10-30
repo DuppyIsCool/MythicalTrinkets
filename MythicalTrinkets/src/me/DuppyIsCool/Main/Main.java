@@ -6,7 +6,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-
 import me.DuppyIsCool.DiamondShards.ShardRecipe;
 import me.DuppyIsCool.Scrolls.ConfigManager;
 import me.DuppyIsCool.Scrolls.ScrollManager;
@@ -18,6 +17,7 @@ public class Main extends JavaPlugin implements CommandExecutor{
 	
 	ConfigManager cfgm = new ConfigManager();
 	ScrollManager sm = new ScrollManager();
+	Achievements ach = new Achievements();
 	Orbs orb = new Orbs();
 	public void onEnable() {
 		//Starting Message
@@ -27,8 +27,10 @@ public class Main extends JavaPlugin implements CommandExecutor{
 		this.getCommand("givescroll").setExecutor(this);
 		this.getCommand("givecheapscroll").setExecutor(this);
 		this.getCommand("giveorb").setExecutor(this);
+		this.getCommand("achievements").setExecutor(this);
 		//Setup Config
 		cfgm.setup();
+		ach.setup();
 		sm.setupDefaultConfig();
 		sm.setupConfig();
 		orb.setup();
@@ -37,6 +39,7 @@ public class Main extends JavaPlugin implements CommandExecutor{
 		Bukkit.getServer().getPluginManager().registerEvents(new Events(), this);
 		Bukkit.getServer().getPluginManager().registerEvents(new Orbs(), this);
 		Bukkit.getServer().getPluginManager().registerEvents(new ScrollManager(), this);
+		Bukkit.getServer().getPluginManager().registerEvents(new Achievements(), this);
 		
 		//Set recipes
 		ShardRecipe.createRecipe();
@@ -50,7 +53,9 @@ public class Main extends JavaPlugin implements CommandExecutor{
 		Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.YELLOW + "Attempting to disable MythicalTrinkets");
 		sm.saveConfig();
 		cfgm.saveScrolls();
+		ach.saveProgress();
 		Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.GREEN + "Sucesfully disabled MythicalTrinkets");
+		
 	}
 	
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -60,6 +65,7 @@ public class Main extends JavaPlugin implements CommandExecutor{
 				if(p.hasPermission("scrolls.givescroll") || p.isOp()) {
 					p.getInventory().addItem(sm.createScroll("REUSEABLE"));
 					p.sendMessage(ChatColor.GREEN + "A reuseable scroll has been added to your inventory.");
+					Achievements.completeAchievement("Teleportation on demand",p);
 					return true;
 				}
 				else {
@@ -79,6 +85,7 @@ public class Main extends JavaPlugin implements CommandExecutor{
 				if(p.hasPermission("scrolls.givecheapscroll") || p.isOp()) {
 					p.getInventory().addItem(sm.createScroll("CHEAP"));
 					p.sendMessage(ChatColor.GREEN + "A cheap scroll has been added to your inventory.");
+					Achievements.completeAchievement("A Scroll?",p);
 					return true;
 				}
 				else {
@@ -102,6 +109,21 @@ public class Main extends JavaPlugin implements CommandExecutor{
 				}
 				else {
 					p.sendMessage(ChatColor.RED + "You do not have permission to use this command");
+					return true;
+				}
+			}
+			else {
+				sender.sendMessage(ChatColor.RED + "You must be a player to use this command");
+				return true;
+			}
+		}
+		
+		else if(command.getName().equalsIgnoreCase("achievements")) {
+			if(sender instanceof Player) {
+				Player p = (Player) sender;
+				
+				if(p.hasPermission("mythicaltrinkets.achievements")) {
+					ach.showAchievements(p);
 					return true;
 				}
 			}

@@ -16,3 +16,8 @@ commands:
     giveorb:
         description: Gives the user an orb
         usage: /<command>
+        permission: orbs.giveorb
+    achievements:
+        description: Brings up the achievement GUI
+        usage: /<command>
+        permission: mythicaltrinkets.achievements

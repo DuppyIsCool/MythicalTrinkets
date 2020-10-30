@@ -32,6 +32,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitTask;
 
+import me.DuppyIsCool.Main.Achievements;
 import me.DuppyIsCool.Main.Plugin;
 
 public class ScrollManager implements Listener{
@@ -328,6 +329,7 @@ public class ScrollManager implements Listener{
 			
 			if(e.getInventory().getResult().getItemMeta().getDisplayName().equals(ChatColor.translateAlternateColorCodes('&', scrollName))) {
 				e.getInventory().setResult(createScroll("REUSEABLE"));
+				Achievements.completeAchievement("Teleportation on demand",(Player) e.getWhoClicked());
 			}
 			
 		}
@@ -443,7 +445,7 @@ public class ScrollManager implements Listener{
 	    return radiusEntities.toArray(new Entity[radiusEntities.size()]);
 	}
 	
-	public boolean isScroll(ItemStack i) {
+	public static boolean isScroll(ItemStack i) {
 		try {
 		if(i != null)
 			if(i.getType().equals(Material.PAPER)) {

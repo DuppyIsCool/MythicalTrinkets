@@ -5,7 +5,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
-
 import net.md_5.bungee.api.ChatColor;
 
 public class Events implements Listener{
@@ -28,4 +27,5 @@ public class Events implements Listener{
 			}
 		}
 	}
+	
 }

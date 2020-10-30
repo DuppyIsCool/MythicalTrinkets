@@ -37,9 +37,6 @@ orbs:
     #Use '%currentname%' to use the item's current name in lore
     displayName: '&cCorrupted %currentname%'
 
-    #Fail message
-    failMessage: "&cThe orb became too unstable and shattered into unusable pieces!"
-
     #Chance table
     itemUpgradeChance: 0.2
     enchantmentUpgradeChance: 0.4
@@ -47,6 +44,8 @@ orbs:
     downgradeChance: 0.2
 
     #Enchantment Level Table
+    #First Number (Ex: 3,2,1,-1) is the level added to the randomly selected enchantment.
+    #Second number is the chance that level modifier has of being used.
     etable:
         3: 0.1
         2: 0.15
@@ -56,6 +55,9 @@ orbs:
     #Orb Dropping
     dropChance: 0.5
     spawnerDrops: false
+    
+    #Only players with "orbs.drops" can make mobs drop orbs
+    usePermission: true
 
     #Allow items with already existing lore? (Likely modified by a previous plugin)
     allowLoreItems: false
@@ -63,8 +65,9 @@ orbs:
     #Vaal Orb display name
     orbDisplayName: "&9Vaal Orb"
     
-    modifiedmessage: "&8This item has been corrupted. You can no longer modify it."
-
+    modifiedmessage: 
+        - "&8This item has been corrupted."
+        - "&8You can no longer modify it."
     #Vaal Orb lore
     orbLore:
         - '&6A strange orb.'
