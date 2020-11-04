@@ -124,11 +124,15 @@ public class Orbs implements Listener{
 			            		if(items != null) {
 				            		if(isIupgrade(items) || items.getEnchantments().size() > 0)
 				            			if(items.hasItemMeta()) {
-				            				if(items.getItemMeta().hasLore())
+				            				if(items.getItemMeta().hasLore()) {
 					            				if(!items.getItemMeta().getLore().contains(ChatColor.translateAlternateColorCodes('&', modifiedmessage))) {
-					            					if(items.getItemMeta().getLore().size() > 0 || allowLoreItems)
+					            					if(items.getItemMeta().getLore().size() > 0 && allowLoreItems)
 					            						i.addItem(items);
 					            				}
+				            				}
+				            				else {
+				            					i.addItem(items);
+				            				}
 				            			}	
 				            			else {
 				            				i.addItem(items);
