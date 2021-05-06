@@ -1,3 +1,3 @@
 # MythicalTrinkets
 
-Custom Items Plugin. Currently still being developed.
+Custom Items Plugin. Finished, but no longer being updated as of right now.
