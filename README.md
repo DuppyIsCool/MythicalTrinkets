@@ -1,4 +1,4 @@
-# WGBuildMode
+# Mythical Trinkets
 
 Adds several new custom items including teleportation scrolls, diamond shards,Vaal Orbs, and an Achievement system.
 
